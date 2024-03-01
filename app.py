@@ -11,6 +11,9 @@ from langchain.chains import ConversationalRetrievalChain
 from htmlTemplates import css, bot_template, user_template 
 from langchain.llms import HuggingFaceHub
 
+from gtts import gTTS
+import os
+
 # Function to convert audio input to text using SpeechRecognition library
 def speech_to_text():
     r = sr.Recognizer()
@@ -56,10 +59,7 @@ def get_vectorstore(text_chunks):
 
 def get_conversation_chain(vectorstore):
     llm = ChatOpenAI()
-    # llm = HuggingFaceHub(repo_id="google/flan-t5-xxl", model_kwargs={"temperature":0.5, "max_length":512})
-
-    memory = ConversationBufferMemory(
-        memory_key='chat_history', return_messages=True)
+    memory = ConversationBufferMemory(memory_key='chat_history', return_messages=True)
     conversation_chain = ConversationalRetrievalChain.from_llm(
         llm=llm,
         retriever=vectorstore.as_retriever(),
@@ -85,42 +85,36 @@ def main():
     load_dotenv()
     st.set_page_config(page_title="Document Intelligence")
     st.write(css, unsafe_allow_html=True)
+    
     if "conversation" not in st.session_state:
         st.session_state.conversation = None
+
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = None
-    st.header("What does the document tell? :coffee:")
 
-    # Add a button to trigger voice input
+    st.header("What does the document tell? :coffee:")
+    
     if st.button("Click to Speak"):
-        user_question = speech_to_text()
-        if user_question:
-            # Display recognized speech text in the text input field
-            st.text_input("What do you wanna know?", value=user_question)
+        handle_userinput(speech_to_text())
     with st.sidebar:
-        # Inject custom CSS to change sidebar background color
-        st.markdown("""
-        <style>
-        .stSidebar {
-            background-color: #0000ff; /* Change sidebar background color here */
-        }
-        </style>
-        """, unsafe_allow_html=True)
         st.subheader("Your documents")
         pdf_docs = st.file_uploader(
             "Upload your PDFs here and click on 'Process'", accept_multiple_files=True)
-        if st.button("Submit"):
+        if st.button("Process"):
+            print("hello")
             with st.spinner("Processing"):
                 # get pdf text
                 raw_text = get_pdf_text(pdf_docs)
+
                 # get the text chunks
                 text_chunks = get_text_chunks(raw_text)
+
                 # create vector store
                 vectorstore = get_vectorstore(text_chunks)
+
                 # create conversation chain
                 st.session_state.conversation = get_conversation_chain(
                     vectorstore)
-
 
 
 if __name__ == '__main__':
