@@ -1,5 +1,6 @@
 import streamlit as st
 from dotenv import load_dotenv
+import speech_recognition as sr
 from PyPDF2 import PdfReader
 from langchain.text_splitter import CharacterTextSplitter
 from langchain.embeddings import OpenAIEmbeddings, HuggingFaceInstructEmbeddings
@@ -9,6 +10,22 @@ from langchain.memory import ConversationBufferMemory
 from langchain.chains import ConversationalRetrievalChain
 from htmlTemplates import css, bot_template, user_template 
 from langchain.llms import HuggingFaceHub
+
+# Function to convert audio input to text using SpeechRecognition library
+def speech_to_text():
+    r = sr.Recognizer()
+    with sr.Microphone(device_index=1) as source:
+        st.write("Say something...")
+        audio = r.listen(source)
+    try:
+        text = r.recognize_google(audio)
+        return text
+    except sr.UnknownValueError:
+        st.write("Sorry, I could not understand what you said.")
+        return ""
+    except sr.RequestError as e:
+        st.write(f"Could not request results from Google Speech Recognition service; {e}")
+        return ""
 
 def get_pdf_text(pdf_docs):
     text = ""
@@ -68,35 +85,42 @@ def main():
     load_dotenv()
     st.set_page_config(page_title="Document Intelligence")
     st.write(css, unsafe_allow_html=True)
-
     if "conversation" not in st.session_state:
         st.session_state.conversation = None
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = None
-
     st.header("What does the document tell? :coffee:")
-    user_question = st.text_input("What do you wanna know?")
-    if user_question:
-        handle_userinput(user_question)
 
+    # Add a button to trigger voice input
+    if st.button("Click to Speak"):
+        user_question = speech_to_text()
+        if user_question:
+            # Display recognized speech text in the text input field
+            st.text_input("What do you wanna know?", value=user_question)
     with st.sidebar:
+        # Inject custom CSS to change sidebar background color
+        st.markdown("""
+        <style>
+        .stSidebar {
+            background-color: #0000ff; /* Change sidebar background color here */
+        }
+        </style>
+        """, unsafe_allow_html=True)
         st.subheader("Your documents")
         pdf_docs = st.file_uploader(
             "Upload your PDFs here and click on 'Process'", accept_multiple_files=True)
-        if st.button("Process"):
+        if st.button("Submit"):
             with st.spinner("Processing"):
                 # get pdf text
                 raw_text = get_pdf_text(pdf_docs)
-
                 # get the text chunks
                 text_chunks = get_text_chunks(raw_text)
-
                 # create vector store
                 vectorstore = get_vectorstore(text_chunks)
-
                 # create conversation chain
                 st.session_state.conversation = get_conversation_chain(
                     vectorstore)
+
 
 
 if __name__ == '__main__':
