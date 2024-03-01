@@ -67,6 +67,12 @@ def get_conversation_chain(vectorstore):
     )
     return conversation_chain
 
+def text_to_speech(text, language='en'):
+    tts = gTTS(text=text, lang=language, slow=False)
+    tts.save("output.mp3")
+
+    os.system("start output.mp3")
+
 
 def handle_userinput(user_question):
     response = st.session_state.conversation({'question': user_question})
@@ -79,6 +85,9 @@ def handle_userinput(user_question):
         else:
             st.write(bot_template.replace(
                 "{{MSG}}", message.content), unsafe_allow_html=True)
+            text_to_speech(message.content)
+            
+
 
 
 def main():
