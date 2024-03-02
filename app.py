@@ -15,7 +15,7 @@ from PIL import Image
 from transformers import BlipProcessor, BlipForConditionalGeneration, DetrImageProcessor, DetrForObjectDetection
 import torch
 
-def speech_to_text():
+def speech_to_text_eng():
     r = sr.Recognizer()
     with sr.Microphone(device_index=1) as source:
         st.write("Say something...")
@@ -28,6 +28,51 @@ def speech_to_text():
         return ""
     except sr.RequestError as e:
         st.write(f"Could not request results from Google Speech Recognition service; {e}")
+        return ""
+
+def speech_to_text_hindi(language='hi-IN'):
+    r = sr.Recognizer()
+    with sr.Microphone() as source:
+        st.write("कुछ कहिए...")
+        audio = r.listen(source)
+    try:
+        text = r.recognize_google(audio, language=language)
+        return text
+    except sr.UnknownValueError:
+        st.write("माफ़ कीजिए, मुझे आपके बोले शब्दों को समझ नहीं आया।")
+        return ""
+    except sr.RequestError as e:
+        st.write(f"Google वाणी संज्ञान सेवा से परिणाम अनुरोध नहीं किया जा सकता; {e}")
+        return ""
+    
+def speech_to_text_german(language='de-DE'):
+    r = sr.Recognizer()
+    with sr.Microphone() as source:
+        st.write("Sprechen Sie etwas...")  # Update this line to display instructions in German
+        audio = r.listen(source)
+    try:
+        text = r.recognize_google(audio, language=language)
+        return text
+    except sr.UnknownValueError:
+        st.write("Entschuldigung, ich konnte Ihre gesprochenen Worte nicht verstehen.")
+        return ""
+    except sr.RequestError as e:
+        st.write(f"Die Google Spracherkennungsdienste konnten nicht angefordert werden; {e}")
+        return ""
+
+def speech_to_text_marathi(language='mr-IN'):
+    r = sr.Recognizer()
+    with sr.Microphone() as source:
+        st.write("आपल्यास कशी मदत करू ?")
+        audio = r.listen(source)
+    try:
+        text = r.recognize_google(audio, language=language)
+        return text
+    except sr.UnknownValueError:
+        st.write("माफ़ करा, मला तुमच्या बोललेल्या शब्दांची समज नाही.")
+        return ""
+    except sr.RequestError as e:
+        st.write(f"Google वॉयस सुनवाई सेवेतून परिणाम विनंती केला जाऊ शकत नाही; {e}")
         return ""
     
 
@@ -204,8 +249,18 @@ def main():
 
     elif option == "Speech":
         st.header("Ask a question using speech")
+
+        lang_op = st.sidebar.selectbox("Language", ["English", "Hindi", "Marathi", "German"])
+
         if st.button("Click to Speak"):
-            handle_userinput(speech_to_text())
+            if(lang_op == "English"):
+                handle_userinput(speech_to_text_eng())
+            elif(lang_op == "Hindi"):
+                handle_userinput(speech_to_text_hindi())
+            elif(lang_op == "Marathi"):
+                handle_userinput(speech_to_text_marathi())
+            elif(lang_op == "German"):
+                handle_userinput(speech_to_text_german())
         with st.sidebar:
             st.subheader("Your documents")
             pdf_docs = st.file_uploader(
