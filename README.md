@@ -1,5 +1,3 @@
-Sure, here's a README template for the code you provided:
-
 ---
 
 # Document Intelligence
